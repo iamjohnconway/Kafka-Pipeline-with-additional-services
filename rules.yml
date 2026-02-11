@@ -1,0 +1,71 @@
+groups:
+  - name: kafka_down
+    rules:
+      - alert: KafkaDownFor10mins
+        expr: kafka_brokers < 1 or absent(kafka_brokers) == 1
+        for: 15s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kafka is not up"
+          description: "Kafka has been down for 10 mins. take actions ASAP!!"
+  - name: kafka_exporter_down
+    rules:
+      - alert: kafkaexporterDown
+        expr: up{job="kafka-exporter"} == 0
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "kafka exporter down!"
+          description: "kafka exporter has been down for 30s"
+  - name: prometheus_job_missing
+    rules:
+      - alert: PrometheusJobMissing
+        expr: up{job=~".*prometheus.*"} == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prometheus job missing (instance {{ $labels.instance }})"
+          description: "A Prometheus job has disappeared\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+  - name: prometheus_not_connected_to_alertmanager
+    rules:
+      - alert: PrometheusNotConnectedToAlertmanager
+        expr: prometheus_notifications_alertmanagers_discovered < 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Prometheus not connected to alertmanager (instance {{ $labels.instance }})"
+          description: "Prometheus cannot connect the alertmanager\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+  - name: kafka_smells_data_loss
+    rules:
+      - alert: KafkaUnderReplicatedPartitions
+        expr: sum(kafka_topic_partition_under_replicated_partition) > 0
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Data Loss(maybe)"
+          description: "Detected partitions with fewer replicas than configured. \npotential data loss risk!!"
+  - name: kafka_offline_partitions
+    rules:
+      - alert: KafkaOfflinePartitions
+        expr: kafka_offline_partitions_count > 0
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Read and Write unavailable"
+          description: "partitions are offline and unavailable for reads/writes."
+  - name: Login_Brute_Force
+    rules:
+      - alert: LoginBruteForce
+        expr: sum(rate(nginx_requests_total{job="nginx"}[5s])) by (ip) > 5
+        for: 10s
+        labels:
+          severity: warning
+        annotations:
+          summary: "A BruteForce Attack is being Attemepted."
+          description: "No Woories. the ip is now blocked"
